@@ -1,0 +1,18 @@
+let x = 5;
+let y = 10;
+let sum = x + y;
+
+if sum > 14 {
+    show "Sum is bigger than 14";
+} else {
+    show "Sum is NOT bigger than 14";
+}
+
+let files = sh :: "ls";
+let hey_fn = fn hey :: name > string {
+    return "Hello there, " << name;
+}
+let hey_jack = hey :: "Jack";
+
+#[allow(auto_shell)]
+let auto_files = ls;
