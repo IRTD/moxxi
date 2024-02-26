@@ -1,13 +1,22 @@
 use std::str::FromStr;
 use strum::EnumString;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
-    literal: String,
-    ty: TokenType,
+    pub literal: String,
+    pub ty: TokenType,
 }
 
-#[derive(Debug, EnumString, Clone, Copy)]
+impl Token {
+    pub fn new(ty: TokenType, l: impl ToString) -> Self {
+        Token {
+            literal: l.to_string(),
+            ty,
+        }
+    }
+}
+
+#[derive(Debug, EnumString, Clone, Copy, PartialEq)]
 pub enum TokenType {
     Illegal,
     Int,
@@ -33,7 +42,7 @@ pub enum TokenType {
     #[strum(serialize = "+")]
     Plus,
     #[strum(serialize = "-")]
-    Minux,
+    Minus,
     #[strum(serialize = ";")]
     Semicolon,
     #[strum(serialize = "<")]
