@@ -18,7 +18,6 @@ impl Lexer {
             ch: '\n',
         };
         l.read_char();
-        l.read_char();
         l
     }
 
@@ -64,10 +63,10 @@ impl Lexer {
     }
 
     pub fn read_char(&mut self) {
-        if self.position >= self.input.len() {
+        if self.read_position >= self.input.len() {
             self.ch = '\0';
         } else {
-            self.ch = self.input[self.position];
+            self.ch = self.input[self.read_position];
         }
 
         self.position = self.read_position;
@@ -92,10 +91,24 @@ impl Lexer {
                     None
                 }
             }
+            '=' => {
+                if self.peek() == '=' {
+                    Some(())
+                } else {
+                    None
+                }
+            }
+            '!' => {
+                if self.peek() == '=' {
+                    Some(())
+                } else {
+                    None
+                }
+            }
             _ => None,
         }?;
         let prev = self.ch;
-        // self.read_char();
+        self.read_char();
         Some(format!("{}{}", prev, self.ch))
     }
 
@@ -106,7 +119,8 @@ impl Lexer {
             return Token::new(TokenType::Int, dig);
         } else if self.ch.is_ascii_alphabetic() {
             let id = self.read_ident();
-            return Token::new(TokenType::Ident, id);
+            let ty = TokenType::from_str(&id).unwrap_or(TokenType::Ident);
+            return Token::new(ty, id);
         }
         let (ty, ch) = match self.read_double() {
             Some(double) => {
@@ -166,7 +180,7 @@ mod tests {
 
     #[test]
     fn read_doubles() {
-        let sample = "<< :: == !=";
+        let sample = "<<::==!=";
         let exp = vec![
             Token::new(TokenType::DoubleLessThan, "<<"),
             Token::new(TokenType::DoubleColon, "::"),
@@ -174,5 +188,34 @@ mod tests {
             Token::new(TokenType::NotEqual, "!="),
         ];
         eval_tokens(exp, sample);
+    }
+
+    #[test]
+    fn read_idents_and_ints() {
+        let sample = "
+            let x = 5;
+            let y = 9;
+            let sum = x + y;
+            ";
+        let exp = vec![
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Int, "5"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "y"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Int, "9"),
+            Token::new(TokenType::Semicolon, ";"),
+            Token::new(TokenType::Let, "let"),
+            Token::new(TokenType::Ident, "sum"),
+            Token::new(TokenType::Assign, "="),
+            Token::new(TokenType::Ident, "x"),
+            Token::new(TokenType::Plus, "+"),
+            Token::new(TokenType::Ident, "y"),
+            Token::new(TokenType::Semicolon, ";"),
+        ];
+        eval_tokens(exp, sample)
     }
 }
