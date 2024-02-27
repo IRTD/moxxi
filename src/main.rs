@@ -2,6 +2,7 @@
 
 use token::TokenType;
 
+mod ast;
 mod lexer;
 mod token;
 
