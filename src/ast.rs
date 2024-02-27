@@ -47,6 +47,19 @@ pub struct LetStmt {
     pub ident: Identifier,
     pub value: Box<dyn Expression>,
 }
+impl Node for LetStmt {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+}
+impl Statement for LetStmt {
+    fn ident<'a>(&'a self) -> &'a Identifier {
+        &self.ident
+    }
+    fn value<'a>(&'a self) -> &'a Box<dyn Expression> {
+        &self.value
+    }
+}
 
 pub struct DummyExpr;
 impl Node for DummyExpr {

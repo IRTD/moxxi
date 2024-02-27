@@ -28,10 +28,6 @@ impl Lexer {
     }
 
     pub fn peek(&self) -> char {
-        println!(
-            "self.pos = {}; self.read_pos = {}",
-            self.position, self.read_position
-        );
         if self.read_position >= self.input.len() {
             return '\0';
         }
@@ -74,8 +70,6 @@ impl Lexer {
     }
 
     pub fn read_double(&mut self) -> Option<String> {
-        println!("self.ch = {:#?}", self.ch);
-        println!("self.peek() = {:#?}", self.peek());
         match self.ch {
             ':' => {
                 if self.peek() == ':' {
@@ -124,7 +118,6 @@ impl Lexer {
         }
         let (ty, ch) = match self.read_double() {
             Some(double) => {
-                println!("Double: {double}");
                 let ty = TokenType::from_str(&double).unwrap_or(TokenType::Illegal);
                 (ty, double)
             }

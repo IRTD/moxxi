@@ -32,7 +32,7 @@ impl Parser {
 
         while self.cur_token.as_ref().unwrap().ty != TokenType::EOF {
             match self.parse_statement() {
-                Some(stmt) => prog.statements.push(stmt),
+                Some(stmt) => prog.statements.push(Box::new(stmt)),
                 None => {}
             }
 
@@ -50,15 +50,14 @@ impl Parser {
     }
 
     pub fn parse_let_stmt(&mut self) -> Option<LetStmt> {
-        let peek = self.peek_token.as_ref()?;
         let token = self.cur_token.clone()?;
         if !self.expect_peek(TokenType::Ident) {
             return None;
         }
-        let token = self.cur_token.clone()?;
+        let id_token = self.cur_token.as_ref()?;
         let ident = Identifier {
-            value: token.literal.to_string(),
-            token,
+            value: id_token.literal.to_string(),
+            token: id_token.clone(),
         };
         if !self.expect_peek(TokenType::Assign) {
             return None;
@@ -68,7 +67,7 @@ impl Parser {
         while !self
             .cur_token
             .as_ref()
-            .is_some_and(|t| t.ty == TokenType::EOF)
+            .is_some_and(|t| t.ty == TokenType::Semicolon)
         {
             self.next_token();
         }
@@ -77,7 +76,7 @@ impl Parser {
             ident,
             value: Box::new(DummyExpr),
         };
-        Some(Box::new(stmt))
+        Some(stmt)
     }
 
     pub fn expect_peek(&mut self, exp: TokenType) -> bool {
@@ -106,18 +105,22 @@ mod tests {
         let prog = p.parse_program();
         assert!(prog.is_some());
         let prog = prog.unwrap();
-        assert_eq!(prog.statements.len(), 3);
+        assert_eq!(prog.statements.len(), 3, "Statement length too short");
         let exp_ids = vec!["x", "y", "foobar"];
         for (i, stmt) in prog.statements.into_iter().enumerate() {
             let exp = exp_ids[i];
-            assert_eq!(stmt.token_literal(), "let");
+            assert_eq!(stmt.token_literal(), "let", "No 'let' token literal");
             assert_eq!(
                 stmt.type_id(),
                 TypeId::of::<LetStmt>(),
                 "Parsed Statement is NOT LetStmt"
             );
-            assert_eq!(stmt.ident().value, exp);
-            assert_eq!(stmt.ident().token_literal(), exp);
+            assert_eq!(stmt.ident().value, exp, "Ident value does not match");
+            assert_eq!(
+                stmt.ident().token_literal(),
+                exp,
+                "Token literal of ident does not match"
+            );
         }
     }
 }
