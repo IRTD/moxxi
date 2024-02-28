@@ -8,6 +8,7 @@ pub struct Parser {
     lexer: Lexer,
     cur_token: Option<Token>,
     peek_token: Option<Token>,
+    errors: Vec<String>,
 }
 
 impl Parser {
@@ -16,10 +17,23 @@ impl Parser {
             lexer,
             cur_token: None,
             peek_token: None,
+            errors: Vec::new(),
         };
         p.next_token();
         p.next_token();
         p
+    }
+
+    pub fn errors<'a>(&'a self) -> &'a Vec<String> {
+        &self.errors
+    }
+
+    pub fn peek_error(&mut self, t: TokenType) {
+        let err = format!(
+            "Expected next token to be {:?}, instead got {:?}",
+            t, self.peek_token
+        );
+        self.errors.push(err);
     }
 
     pub fn next_token(&mut self) {
@@ -32,7 +46,7 @@ impl Parser {
 
         while self.cur_token.as_ref().unwrap().ty != TokenType::EOF {
             match self.parse_statement() {
-                Some(stmt) => prog.statements.push(Box::new(stmt)),
+                Some(stmt) => prog.statements.push(stmt),
                 None => {}
             }
 
@@ -42,14 +56,22 @@ impl Parser {
         Some(prog)
     }
 
-    pub fn parse_statement(&mut self) -> Option<impl Statement> {
+    pub fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.as_ref()?.ty {
             TokenType::Let => return self.parse_let_stmt(),
+            TokenType::Return => return self.parse_return_statement(),
             _ => None,
         }
     }
 
-    pub fn parse_let_stmt(&mut self) -> Option<LetStmt> {
+    pub fn parse_return_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let token = self.cur_token.clone()?;
+        self.next_token();
+
+        while !self.cur_token.is_some_and(|i| )
+    }
+
+    pub fn parse_let_stmt(&mut self) -> Option<Box<dyn Statement>> {
         let token = self.cur_token.clone()?;
         if !self.expect_peek(TokenType::Ident) {
             return None;
@@ -76,7 +98,7 @@ impl Parser {
             ident,
             value: Box::new(DummyExpr),
         };
-        Some(stmt)
+        Some(Box::new(stmt))
     }
 
     pub fn expect_peek(&mut self, exp: TokenType) -> bool {
@@ -84,6 +106,7 @@ impl Parser {
             self.next_token();
             true
         } else {
+            self.peek_error(exp);
             false
         }
     }
@@ -92,6 +115,19 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn check_parse_error(p: &mut Parser) {
+        if p.errors().is_empty() {
+            return;
+        }
+
+        eprintln!("Parser has {}, errors", p.errors().len());
+
+        for err in p.errors() {
+            eprintln!("ParseErr: {}", err);
+        }
+        panic!("Parser had Errors");
+    }
 
     #[test]
     fn parses_let_statement() {
@@ -105,6 +141,7 @@ mod tests {
         let prog = p.parse_program();
         assert!(prog.is_some());
         let prog = prog.unwrap();
+        check_parse_error(&mut p);
         assert_eq!(prog.statements.len(), 3, "Statement length too short");
         let exp_ids = vec!["x", "y", "foobar"];
         for (i, stmt) in prog.statements.into_iter().enumerate() {
@@ -122,5 +159,37 @@ mod tests {
                 "Token literal of ident does not match"
             );
         }
+    }
+
+    #[test]
+    #[should_panic]
+    fn emits_error_on_false_syntax() {
+        let sample = "
+            let x = 4;
+            let y = 120;
+            let 3242;
+        ";
+        let l = Lexer::new(sample);
+        let mut p = Parser::new(l);
+        let prog = p.parse_program();
+        assert!(prog.is_some());
+        check_parse_error(&mut p);
+    }
+
+    #[test]
+    fn parses_return_statement() {
+        let sample = "
+            return 5;
+        ";
+        let l = Lexer::new(sample);
+        let mut p = Parser::new(l);
+        let prog = p.parse_program();
+        assert!(prog.is_some());
+        let prog = prog.unwrap();
+        check_parse_error(&mut p);
+        assert_eq!(prog.statements.len(), 1);
+        let stmt = prog.statements.first().unwrap();
+        assert_eq!(stmt.token_literal(), "return");
+        assert_eq!(stmt.type_id(), TypeId::of::<ReturnStmt>());
     }
 }

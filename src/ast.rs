@@ -61,6 +61,25 @@ impl Statement for LetStmt {
     }
 }
 
+pub struct ReturnStmt {
+    token: Token,
+    value: Box<dyn Expression>,
+}
+impl Node for ReturnStmt {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+}
+impl Statement for ReturnStmt {
+    fn ident<'a>(&'a self) -> &'a Identifier {
+        panic!("Called ident on ReturnStmt");
+    }
+
+    fn value<'a>(&'a self) -> &'a Box<dyn Expression> {
+        &self.value
+    }
+}
+
 pub struct DummyExpr;
 impl Node for DummyExpr {
     fn token_literal(&self) -> String {
