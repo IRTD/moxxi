@@ -68,7 +68,20 @@ impl Parser {
         let token = self.cur_token.clone()?;
         self.next_token();
 
-        while !self.cur_token.is_some_and(|i| )
+        while !self
+            .cur_token
+            .as_ref()
+            .is_some_and(|i| i.ty == TokenType::Semicolon)
+        {
+            self.next_token();
+        }
+        // TODO well, expressions
+
+        let stmt = ReturnStmt {
+            token,
+            value: Box::new(DummyExpr),
+        };
+        Some(Box::new(stmt))
     }
 
     pub fn parse_let_stmt(&mut self) -> Option<Box<dyn Statement>> {
@@ -180,6 +193,8 @@ mod tests {
     fn parses_return_statement() {
         let sample = "
             return 5;
+            return 53;
+            return x;
         ";
         let l = Lexer::new(sample);
         let mut p = Parser::new(l);
@@ -187,9 +202,10 @@ mod tests {
         assert!(prog.is_some());
         let prog = prog.unwrap();
         check_parse_error(&mut p);
-        assert_eq!(prog.statements.len(), 1);
-        let stmt = prog.statements.first().unwrap();
-        assert_eq!(stmt.token_literal(), "return");
-        assert_eq!(stmt.type_id(), TypeId::of::<ReturnStmt>());
+        assert_eq!(prog.statements.len(), 3);
+        for stmt in prog.statements {
+            assert_eq!(stmt.token_literal(), "return");
+            assert_eq!(stmt.type_id(), TypeId::of::<ReturnStmt>());
+        }
     }
 }

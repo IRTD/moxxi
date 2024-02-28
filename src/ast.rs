@@ -62,8 +62,8 @@ impl Statement for LetStmt {
 }
 
 pub struct ReturnStmt {
-    token: Token,
-    value: Box<dyn Expression>,
+    pub token: Token,
+    pub value: Box<dyn Expression>,
 }
 impl Node for ReturnStmt {
     fn token_literal(&self) -> String {
